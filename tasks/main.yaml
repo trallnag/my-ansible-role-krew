@@ -1,0 +1,84 @@
+# ------------------------------------------------------------------------------
+
+
+- name: Initial install
+  ansible.builtin.shell: |
+    source ~/.asdf/asdf.sh
+    if [ ! -d ~/.krew ]; then
+      rm -rf /tmp/krew
+      mkdir -p /tmp/krew
+      cd /tmp/krew
+
+      set +x
+
+      OS="$(uname | tr '[:upper:]' '[:lower:]')"
+      ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')"
+      KREW="krew-${OS}_${ARCH}"
+      curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz"
+      tar zxvf "${KREW}.tar.gz"
+      ./"${KREW}" install krew
+
+      echo status=changed
+    fi
+  register: task
+  args: {warn: false} 
+  changed_when: "'status=changed' in task.stdout"
+
+- { name: "Debug", debug: {var: task.stdout_lines}, tags: [debug]}
+
+- name: Add init block to {{ bash_profile_middle }}
+  ansible.builtin.blockinfile:
+    path: "{{ bash_profile_middle }}"
+    marker: "# {mark} :: ANSIBLE MANAGED BLOCK :: {{ role_name }}"
+    block: |
+      export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+- name: Add init block to {{ zsh_zprofile_middle }}
+  ansible.builtin.blockinfile:
+    path: "{{ zsh_zprofile_middle }}"
+    marker: "# {mark} :: ANSIBLE MANAGED BLOCK :: {{ role_name }}"
+    block: |
+      export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+
+# ------------------------------------------------------------------------------
+
+
+- name: Update plugin list
+  ansible.builtin.shell: |
+    source ~/.asdf/asdf.sh
+    export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+    kubectl krew update
+  changed_when: false
+
+- name: Install plugins
+  ansible.builtin.shell: |
+    source ~/.asdf/asdf.sh
+    export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+    
+    installed_plugins="$(kubectl krew list)"
+
+    typeset -a plugins=(
+      access-matrix
+      whoami
+      who-can
+      tree
+      trace
+      tail
+      score
+    )
+
+    for plugin in $plugins; do
+      if ! echo $installed_plugins | grep -q "^$plugin"; then
+        kubectl krew install $plugin
+      fi
+    done
+  args: {executable: /usr/bin/zsh}
+  register: task
+  changed_when: false
+
+- { name: "Debug", debug: {var: task.stdout_lines}, tags: [debug]}
+
+
+# ------------------------------------------------------------------------------
