@@ -59,7 +59,7 @@
     
     installed_plugins="$(kubectl krew list)"
 
-    typeset -a plugins=(
+    plugins=(
       access-matrix
       whoami
       who-can
@@ -69,12 +69,12 @@
       score
     )
 
-    for plugin in $plugins; do
+    for plugin in "${plugins[@]}"; do
       if ! echo $installed_plugins | grep -q "^$plugin"; then
         kubectl krew install $plugin
       fi
     done
-  args: {executable: /usr/bin/zsh}
+  args: {executable: /bin/bash}
   register: task
   changed_when: false
 
