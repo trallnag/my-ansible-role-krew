@@ -44,7 +44,7 @@
 # ------------------------------------------------------------------------------
 
 
-- name: Update plugin list
+- name: Update plugins
   ansible.builtin.shell: |
     source ~/.asdf/asdf.sh
     export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
