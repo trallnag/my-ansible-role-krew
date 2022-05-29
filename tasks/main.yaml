@@ -26,14 +26,14 @@
 
 - { name: "Debug", debug: {var: task.stdout_lines}, tags: [debug]}
 
-- name: Add init block to {{ bash_profile_middle }}
+- name: "bash : Add init block to {{ bash_profile_middle }}"
   ansible.builtin.blockinfile:
     path: "{{ bash_profile_middle }}"
     marker: "# {mark} :: ANSIBLE MANAGED BLOCK :: {{ role_name }}"
     block: |
       export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
-- name: Add init block to {{ zsh_zprofile_middle }}
+- name: "zsh : Add init block to {{ zsh_zprofile_middle }}"
   ansible.builtin.blockinfile:
     path: "{{ zsh_zprofile_middle }}"
     marker: "# {mark} :: ANSIBLE MANAGED BLOCK :: {{ role_name }}"
@@ -50,6 +50,7 @@
     export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
     kubectl krew update
+  args: {executable: /bin/bash}
   changed_when: false
 
 - name: Install plugins
@@ -61,12 +62,15 @@
 
     plugins=(
       access-matrix
-      whoami
-      who-can
-      tree
-      trace
-      tail
+      cert-manager
+      deprecations
+      resource-capacity
       score
+      tail
+      trace
+      tree
+      who-can
+      whoami
     )
 
     for plugin in "${plugins[@]}"; do
